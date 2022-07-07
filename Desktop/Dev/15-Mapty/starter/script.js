@@ -15,6 +15,8 @@ class Workout {
   date = new Date();
   //? Create arandom date and convert to string
   id = (Date.now() + '').slice(-10);
+  //? total click on workouts
+  clicks = 0;
 
   constructor(coords, distance, duration) {
     this.coords = coords;
@@ -30,6 +32,11 @@ class Workout {
       months[this.date.getMonth()]
     }
     ${this.date.getDate()}`;
+  }
+
+  clickCounter() {
+    console.log('inside click');
+    this.clicks++;
   }
 }
 //? Child classes
@@ -71,6 +78,7 @@ class Cycling extends Workout {
 class App {
   //! Private class vars
   #map;
+  #mapZoomLevel = 13;
   #mapEvent;
   #workoutsArr = [];
 
@@ -83,6 +91,9 @@ class App {
 
     //? Toogle between elev gain and cadence between running and cycling
     inputType.addEventListener('change', this._toggleElevationField);
+
+    //? Add the event listener to all workouts container parent of workouts
+    containerWorkouts.addEventListener('click', this._moveToMarker.bind(this));
   }
 
   _getPosition() {
@@ -103,7 +114,7 @@ class App {
 
     const coords = [latitude, longitude];
 
-    this.#map = L.map('map').setView(coords, 13);
+    this.#map = L.map('map').setView(coords, this.#mapZoomLevel);
 
     L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png').addTo(
       this.#map
@@ -259,6 +270,29 @@ class App {
       inputElevation.value =
         '';
     form.classList.remove('hidden');
+  }
+
+  //? Move to to marker location
+  _moveToMarker(e) {
+    const workoutElement = e.target.closest('.workout');
+
+    //* guard clause
+    if (!workoutElement) return;
+
+    const clickedWorkout = this.#workoutsArr.find(
+      workout => workout.id === workoutElement.dataset.id
+    );
+
+    //* Use leaflet method to move to the correct marker
+    this.#map.setView(clickedWorkout.coords, this.#mapZoomLevel, {
+      animate: true,
+      pan: { duration: 1 },
+    });
+
+    //* Using the public workout interface
+    console.log('Inside move to markjer');
+    clickedWorkout.clickCounter();
+    console.log(clickedWorkout);
   }
 }
 
